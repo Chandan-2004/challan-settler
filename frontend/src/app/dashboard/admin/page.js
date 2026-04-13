@@ -2,14 +2,19 @@
 
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://challan-settler.onrender.com";
 
 export default function AdminDashboard() {
   const [challans, setChallans] = useState([]);
+  const [users, setUsers] = useState([]);
   const [lawyers, setLawyers] = useState([]);
+
+  // 🔥 FETCH DATA
   const fetchData = async () => {
     const token = localStorage.getItem("token");
+
     try {
       const challanRes = await fetch(`${API_URL}/api/challans/all`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -23,10 +28,21 @@ export default function AdminDashboard() {
 
       const userData = await userRes.json();
 
-     setChallans(Array.isArray(challanData) ? challanData : []);
-setLawyers(Array.isArray(userData) ? userData : []);
+      // ✅ Separate users & lawyers
+      const usersOnly = Array.isArray(userData)
+        ? userData.filter((u) => u.role === "USER")
+        : [];
+
+      const lawyersOnly = Array.isArray(userData)
+        ? userData.filter((u) => u.role === "LAWYER")
+        : [];
+
+      setChallans(Array.isArray(challanData) ? challanData : []);
+      setUsers(usersOnly);
+      setLawyers(lawyersOnly);
     } catch (err) {
       console.error("Fetch Error:", err);
+      toast.error("Failed to load data");
     }
   };
 
@@ -34,7 +50,15 @@ setLawyers(Array.isArray(userData) ? userData : []);
     fetchData();
   }, []);
 
+  // 🔥 ASSIGN LAWYER
   const assignLawyer = async (challan_id, lawyer_id) => {
+    const token = localStorage.getItem("token");
+
+    if (!lawyer_id) {
+      toast.error("Please select a lawyer");
+      return;
+    }
+
     try {
       const res = await fetch(`${API_URL}/api/challans/assign`, {
         method: "POST",
@@ -48,11 +72,40 @@ setLawyers(Array.isArray(userData) ? userData : []);
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error("Assignment failed");
+        toast.error(data.message || "Assignment failed");
         return;
       }
 
       toast.success("Lawyer assigned");
+      fetchData();
+    } catch (err) {
+      console.error("Assign Error:", err);
+      toast.error("Server error");
+    }
+  };
+
+  // 🔥 DELETE USER
+  const deleteUser = async (id) => {
+    const token = localStorage.getItem("token");
+
+    if (!confirm("Are you sure?")) return;
+
+    try {
+      const res = await fetch(`${API_URL}/api/auth/delete/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.message || "Delete failed");
+        return;
+      }
+
+      toast.success("User deleted");
       fetchData();
     } catch (err) {
       console.error(err);
@@ -60,6 +113,7 @@ setLawyers(Array.isArray(userData) ? userData : []);
     }
   };
 
+  // 🔥 STATUS COLORS
   const getStatusColor = (status) => {
     switch (status) {
       case "SUBMITTED":
@@ -74,184 +128,145 @@ setLawyers(Array.isArray(userData) ? userData : []);
         return "bg-gray-100 text-gray-700";
     }
   };
-  const deleteUser = async (id) => {
-  const token = localStorage.getItem("token");
 
-  if (!confirm("Are you sure?")) return;
-
-  try {
-    const res = await fetch(`${API_URL}/api/auth/delete/${id}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      toast.error(data.message || "Delete failed");
-      return;
-    }
-
-    toast.success("User deleted");
-    fetchData();
-  } catch (err) {
-    console.error(err);
-    toast.error("Server error");
-  }
-};
+  // 🔥 STATS
   const total = challans.length;
-const assigned = challans.filter(c => c.status === "ASSIGNED").length;
-const inProgress = challans.filter(c => c.status === "IN_PROGRESS").length;
-const completed = challans.filter(c => c.status === "COMPLETED").length;
+  const assigned = challans.filter((c) => c.status === "ASSIGNED").length;
+  const inProgress = challans.filter(
+    (c) => c.status === "IN_PROGRESS"
+  ).length;
+  const completed = challans.filter(
+    (c) => c.status === "COMPLETED"
+  ).length;
+
   return (
     <main className="min-h-screen bg-gray-50 p-6 md:p-10">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-blue-700 mb-8">
           Admin Dashboard
         </h1>
-        {/* Stats */}
-<div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-  <div className="bg-white p-5 rounded-2xl shadow">
-    <p className="text-gray-500">Total</p>
-    <h2 className="text-2xl font-bold">{total}</h2>
-  </div>
 
-  <div className="bg-blue-50 p-5 rounded-2xl shadow">
-    <p className="text-blue-700">Assigned</p>
-    <h2 className="text-2xl font-bold">{assigned}</h2>
-  </div>
+        {/* 🔥 Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+          <div className="bg-white p-5 rounded-2xl shadow">
+            <p>Total</p>
+            <h2 className="text-2xl font-bold">{total}</h2>
+          </div>
+          <div className="bg-blue-50 p-5 rounded-2xl shadow">
+            <p>Assigned</p>
+            <h2 className="text-2xl font-bold">{assigned}</h2>
+          </div>
+          <div className="bg-purple-50 p-5 rounded-2xl shadow">
+            <p>In Progress</p>
+            <h2 className="text-2xl font-bold">{inProgress}</h2>
+          </div>
+          <div className="bg-green-50 p-5 rounded-2xl shadow">
+            <p>Completed</p>
+            <h2 className="text-2xl font-bold">{completed}</h2>
+          </div>
+        </div>
 
-  <div className="bg-purple-50 p-5 rounded-2xl shadow">
-    <p className="text-purple-700">In Progress</p>
-    <h2 className="text-2xl font-bold">{inProgress}</h2>
-  </div>
+        {/* 🔥 USERS TABLE */}
+        <div className="bg-white p-6 rounded-3xl shadow-lg mb-10">
+          <h2 className="text-xl font-semibold mb-4">Users</h2>
 
-  <div className="bg-green-50 p-5 rounded-2xl shadow">
-    <p className="text-green-700">Completed</p>
-    <h2 className="text-2xl font-bold">{completed}</h2>
-  </div>
-</div>
-<div className="bg-white p-6 rounded-3xl shadow-lg mb-10">
-  <h2 className="text-xl font-semibold mb-4">Users & Lawyers</h2>
+          <table className="w-full">
+            <tbody>
+              {users.map((u) => (
+                <tr key={u.id} className="border-b">
+                  <td>{u.name}</td>
+                  <td>{u.email}</td>
+                  <td>{u.role}</td>
+                  <td>
+                    <button
+                      onClick={() => deleteUser(u.id)}
+                      className="text-red-600"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-  <table className="w-full">
-    <thead>
-      <tr className="border-b">
-        <th>Name</th>
-        <th>Email</th>
-        <th>Role</th>
-        <th>Action</th>
-      </tr>
-    </thead>
+        {/* 🔥 LAWYERS TABLE */}
+        <div className="bg-white p-6 rounded-3xl shadow-lg mb-10">
+          <h2 className="text-xl font-semibold mb-4">Lawyers</h2>
 
-    <tbody>
-      {lawyers.map((u) => (
-        <tr key={u.id} className="border-b">
-          <td>{u.name}</td>
-          <td>{u.email}</td>
-          <td>{u.role}</td>
-          <td>
-            <button
-              onClick={() => deleteUser(u.id)}
-              className="text-red-600"
-            >
-              Delete
-            </button>
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</div>
+          <table className="w-full">
+            <tbody>
+              {lawyers.map((u) => (
+                <tr key={u.id} className="border-b">
+                  <td>{u.name}</td>
+                  <td>{u.email}</td>
+                  <td>{u.role}</td>
+                  <td>
+                    <button
+                      onClick={() => deleteUser(u.id)}
+                      className="text-red-600"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* 🔥 CHALLANS */}
         <div className="bg-white p-6 rounded-3xl shadow-lg">
-          <h2 className="text-xl font-semibold mb-6">
-            All Challans
-          </h2>
-          {challans.length === 0 ? (
-            <p className="text-gray-500">No challans found.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b text-gray-600">
-                    <th className="py-3">User</th>
-                    <th className="py-3">Challan</th>
-                    <th className="py-3">Vehicle</th>
-                    <th className="py-3">Status</th>
-                    <th className="py-3">Lawyer</th>
-                    <th className="py-3">Document</th>
-                    <th className="py-3">Assign</th>
-                  </tr>
-                </thead>
+          <h2 className="text-xl font-semibold mb-6">All Challans</h2>
 
-                <tbody>
-                  {challans.map((c) => (
-                    <tr key={c.id} className="border-b hover:bg-gray-50">
-                      <td className="py-3">{c.user_name || "N/A"}</td>
-                      <td className="py-3">{c.challan_number}</td>
-                      <td className="py-3">{c.vehicle_number}</td>
+          <table className="w-full">
+            <tbody>
+              {challans.map((c) => (
+                <tr key={c.id} className="border-b">
+                  <td>{c.user_name}</td>
+                  <td>{c.challan_number}</td>
+                  <td>{c.vehicle_number}</td>
 
-                      <td className="py-3">
-                        <span
-                          className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                            c.status
-                          )}`}
-                        >
-                          {c.status}
-                        </span>
-                      </td>
+                  <td>
+                    <span className={getStatusColor(c.status)}>
+                      {c.status}
+                    </span>
+                  </td>
 
-                      <td className="py-3">
-                        {c.lawyer_name || "Not Assigned"}
-                      </td>
+                  <td>{c.lawyer_name || "Not Assigned"}</td>
 
-                      <td className="py-3">
-                        {c.document_path ? (
-                          <div className="flex gap-2">
-                            <a
-                              href={c.document_path}
-                              target="_blank"
-                              className="text-blue-600"
-                            >
-                              View
-                            </a>
-                            <a
-                              href={c.document_path}
-                              download
-                              className="text-green-600"
-                            >
-                              Download
-                            </a>
-                          </div>
-                        ) : (
-                          "No file"
-                        )}
-                      </td>
+                  <td>
+                    {c.document_path && (
+                      <a
+                        href={c.document_path}
+                        target="_blank"
+                        className="text-blue-600"
+                      >
+                        View
+                      </a>
+                    )}
+                  </td>
 
-                      <td className="py-3">
-                        <select
-                          onChange={(e) =>
-                            assignLawyer(c.id, e.target.value)
-                          }
-                          className="border p-2 rounded-xl"
-                          defaultValue=""
-                        >
-                          <option value="">Select</option>
-                          {lawyers.map((l) => (
-                            <option key={l.id} value={l.id}>
-                              {l.name}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  <td>
+                    <select
+                      onChange={(e) =>
+                        assignLawyer(c.id, e.target.value)
+                      }
+                      defaultValue=""
+                    >
+                      <option value="">Select</option>
+                      {lawyers.map((l) => (
+                        <option key={l.id} value={l.id}>
+                          {l.name}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </main>

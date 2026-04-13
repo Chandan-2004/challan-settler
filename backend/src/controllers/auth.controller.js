@@ -27,29 +27,27 @@ exports.register = async (req, res) => {
        RETURNING id, name, email, role`,
       [name, email, hashedPassword, role || "USER"]
     );
+    try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Registration Successful",
+      html: `<h2>Welcome to Challan Settler</h2>`,
+    });
 
+    console.log("EMAIL SENT");
+  } catch (err) {
+    console.error("EMAIL ERROR:", err.message);
+  }
     return res.status(201).json({
       message: "User registered successfully",
       user: result.rows[0],
     });
-    
   } catch (error) {
     console.error("Register Error:", error);
     return res.status(500).json({ message: "Server error" });
   }
-  await transporter.sendMail({
-  from: process.env.EMAIL_USER,
-  to: email,
-  subject: "Registration Successful",
-  html: `<h2>Welcome to Challan Settler</h2>
-         <p>Your account has been created successfully.</p>`,
-});
-  await transporter.sendMail({
-  from: process.env.EMAIL_USER,
-  to: process.env.EMAIL_USER, // admin email
-  subject: "New User Registered",
-  html: `<p>New user registered: ${email}</p>`,
-});
+ 
 };
 
 exports.login = async (req, res) => {
