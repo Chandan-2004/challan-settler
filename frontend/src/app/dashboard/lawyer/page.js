@@ -84,14 +84,32 @@ export default function LawyerDashboard() {
         return "bg-gray-100 text-gray-700";
     }
   };
-
+  const total = challans.length;
+const inProgress = challans.filter(c => c.status === "IN_PROGRESS").length;
+const completed = challans.filter(c => c.status === "COMPLETED").length;
   return (
     <main className="min-h-screen bg-gray-50 p-6 md:p-10">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-blue-700 mb-8">
           Lawyer Dashboard
         </h1>
+        {/* Stats */}
+<div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10">
+  <div className="bg-white p-5 rounded-2xl shadow">
+    <p className="text-gray-500">Total</p>
+    <h2 className="text-2xl font-bold">{total}</h2>
+  </div>
 
+  <div className="bg-purple-50 p-5 rounded-2xl shadow">
+    <p className="text-purple-700">In Progress</p>
+    <h2 className="text-2xl font-bold">{inProgress}</h2>
+  </div>
+
+  <div className="bg-green-50 p-5 rounded-2xl shadow">
+    <p className="text-green-700">Completed</p>
+    <h2 className="text-2xl font-bold">{completed}</h2>
+  </div>
+</div>
         {/* Challans Table */}
         <div className="bg-white p-6 rounded-3xl shadow-lg mb-10">
           <h2 className="text-xl font-semibold mb-6">
