@@ -17,7 +17,7 @@ exports.createChallan = async (req, res) => {
         req.user.id,
         challan_number,
         vehicle_number,
-        req.file ? req.file.filename : null,
+        req.file ? req.file.path : null,
         "SUBMITTED",
       ]
     );

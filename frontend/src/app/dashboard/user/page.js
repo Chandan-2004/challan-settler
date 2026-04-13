@@ -209,14 +209,14 @@ const completed = challans.filter(c => c.status === "COMPLETED").length;
                         {c.document_path ? (
                           <div className="flex gap-3">
                             <a
-                              href={`${API_URL}/uploads/${c.document_path}`}
+                              href={c.document_path}
                               target="_blank"
                               className="text-blue-600 hover:underline"
                             >
                               View
                             </a>
                             <a
-                              href={`${API_URL}/uploads/${c.document_path}`}
+                              href={c.document_path}
                               download
                               className="text-green-600 hover:underline"
                             >

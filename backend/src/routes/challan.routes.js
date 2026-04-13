@@ -8,12 +8,14 @@ const { verifyToken } = require("../middleware/auth.middleware");
 const { allowRoles } = require("../middleware/role.middleware");
 
 // Multer config
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "src/uploads");
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + "-" + file.originalname);
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("../config/cloudinary");
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "challans",
+    resource_type: "auto",
   },
 });
 
