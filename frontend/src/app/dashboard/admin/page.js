@@ -23,12 +23,8 @@ export default function AdminDashboard() {
 
       const userData = await userRes.json();
 
-      const lawyersOnly = Array.isArray(userData)
-        ? userData.filter((u) => u.role === "LAWYER")
-        : [];
-
-      setChallans(Array.isArray(challanData) ? challanData : []);
-      setLawyers(lawyersOnly);
+     setChallans(Array.isArray(challanData) ? challanData : []);
+setLawyers(Array.isArray(userData) ? userData : []);
     } catch (err) {
       console.error("Fetch Error:", err);
     }

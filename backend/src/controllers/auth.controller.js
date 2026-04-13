@@ -1,7 +1,7 @@
 const pool = require("../config/database");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-
+const transporter = require("../config/mailer");
 exports.register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -32,10 +32,24 @@ exports.register = async (req, res) => {
       message: "User registered successfully",
       user: result.rows[0],
     });
+    
   } catch (error) {
     console.error("Register Error:", error);
     return res.status(500).json({ message: "Server error" });
   }
+  await transporter.sendMail({
+  from: process.env.EMAIL_USER,
+  to: email,
+  subject: "Registration Successful",
+  html: `<h2>Welcome to Challan Settler</h2>
+         <p>Your account has been created successfully.</p>`,
+});
+  await transporter.sendMail({
+  from: process.env.EMAIL_USER,
+  to: process.env.EMAIL_USER, // admin email
+  subject: "New User Registered",
+  html: `<p>New user registered: ${email}</p>`,
+});
 };
 
 exports.login = async (req, res) => {
