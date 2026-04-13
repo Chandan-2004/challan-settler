@@ -1,60 +1,47 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import ProtectedRoute from "../../../../src/components/ProtectedRoute";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://challan-settler.onrender.com";
 
 export default function AdminDashboard() {
-  const router = useRouter();
   const [challans, setChallans] = useState([]);
   const [lawyers, setLawyers] = useState([]);
-  const [selectedId, setSelectedId] = useState(null);
-  const [timeline, setTimeline] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const user = JSON.parse(localStorage.getItem("user"));
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-    if (!token || user?.role !== "ADMIN") {
-      router.push("/login");
-      return;
-    }
-
-    fetchData(token);
-  }, [router]);
-
-  const fetchData = async (token) => {
+  const fetchData = async () => {
     try {
       const challanRes = await fetch(`${API_URL}/api/challans/all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const usersRes = await fetch(`${API_URL}/api/auth/all-users`, {
+      const challanData = await challanRes.json();
+
+      const userRes = await fetch(`${API_URL}/api/auth/all-users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const challanData = await challanRes.json();
-      const usersData = await usersRes.json();
+      const userData = await userRes.json();
+
+      const lawyersOnly = Array.isArray(userData)
+        ? userData.filter((u) => u.role === "LAWYER")
+        : [];
 
       setChallans(Array.isArray(challanData) ? challanData : []);
-      setLawyers(Array.isArray(usersData) ? usersData.filter((u) => u.role === "LAWYER") : []);
-    } catch (error) {
-      console.error("Fetch Admin Data Error:", error);
-      setChallans([]);
-      setLawyers([]);
-    } finally {
-      setLoading(false);
+      setLawyers(lawyersOnly);
+    } catch (err) {
+      console.error("Fetch Error:", err);
     }
   };
 
-  const assignLawyer = async (challanId, lawyerId) => {
-    const token = localStorage.getItem("token");
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-    if (!lawyerId) return;
-
+  const assignLawyer = async (challan_id, lawyer_id) => {
     try {
       const res = await fetch(`${API_URL}/api/challans/assign`, {
         method: "POST",
@@ -62,127 +49,136 @@ export default function AdminDashboard() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          challan_id: Number(challanId),
-          lawyer_id: Number(lawyerId),
-        }),
+        body: JSON.stringify({ challan_id, lawyer_id }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.message || "Failed to assign lawyer");
+        alert(data.message || "Assignment failed");
         return;
       }
 
-      alert("Lawyer assigned successfully");
-      fetchData(token);
-    } catch (error) {
-      console.error("Assign Lawyer Error:", error);
+      alert("Lawyer assigned");
+      fetchData();
+    } catch (err) {
+      console.error(err);
       alert("Server error");
     }
   };
 
-  const fetchTimeline = async (id) => {
-    const token = localStorage.getItem("token");
-
-    try {
-      const res = await fetch(`${API_URL}/api/challans/timeline/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const data = await res.json();
-      setTimeline(Array.isArray(data) ? data : []);
-      setSelectedId(id);
-    } catch (error) {
-      console.error("Timeline Error:", error);
-      setTimeline([]);
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "SUBMITTED":
+        return "bg-yellow-100 text-yellow-700";
+      case "ASSIGNED":
+        return "bg-blue-100 text-blue-700";
+      case "IN_PROGRESS":
+        return "bg-purple-100 text-purple-700";
+      case "COMPLETED":
+        return "bg-green-100 text-green-700";
+      default:
+        return "bg-gray-100 text-gray-700";
     }
   };
 
   return (
-    <ProtectedRoute allowedRole="ADMIN">
-      <div className="p-6 bg-gray-100 min-h-screen">
-        <h1 className="text-3xl font-bold mb-4">Admin Dashboard</h1>
+    <main className="min-h-screen bg-gray-50 p-6 md:p-10">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold text-blue-700 mb-8">
+          Admin Dashboard
+        </h1>
 
-        <div className="bg-white p-4 rounded shadow">
-          <h2 className="text-xl font-bold mb-3">All Challans</h2>
+        <div className="bg-white p-6 rounded-3xl shadow-lg">
+          <h2 className="text-xl font-semibold mb-6">
+            All Challans
+          </h2>
 
-          {loading ? (
-            <p>Loading...</p>
-          ) : challans.length === 0 ? (
-            <p>No challans found.</p>
+          {challans.length === 0 ? (
+            <p className="text-gray-500">No challans found.</p>
           ) : (
-            challans.map((c) => (
-              <div key={c.id} className="border-b py-3">
-                <p><strong>Challan:</strong> {c.challan_number}</p>
-                <p><strong>Status:</strong> {c.status}</p>
-                <p><strong>User:</strong> {c.user_name}</p>
-                <p><strong>Lawyer:</strong> {c.lawyer_name || "Not Assigned"}</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b text-gray-600">
+                    <th className="py-3">User</th>
+                    <th className="py-3">Challan</th>
+                    <th className="py-3">Vehicle</th>
+                    <th className="py-3">Status</th>
+                    <th className="py-3">Lawyer</th>
+                    <th className="py-3">Document</th>
+                    <th className="py-3">Assign</th>
+                  </tr>
+                </thead>
 
-                {c.document_path && (
-                  <div className="mt-2">
-                    <a
-                      href={`${API_URL}/uploads/${c.document_path}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 underline mr-3"
-                    >
-                      View Document
-                    </a>
-                    <a
-                      href={`${API_URL}/uploads/${c.document_path}`}
-                      download
-                      className="text-green-600 underline"
-                    >
-                      Download
-                    </a>
-                  </div>
-                )}
+                <tbody>
+                  {challans.map((c) => (
+                    <tr key={c.id} className="border-b hover:bg-gray-50">
+                      <td className="py-3">{c.user_name || "N/A"}</td>
+                      <td className="py-3">{c.challan_number}</td>
+                      <td className="py-3">{c.vehicle_number}</td>
 
-                <select
-                  value={c.lawyer_id || ""}
-                  onChange={(e) => assignLawyer(c.id, e.target.value)}
-                  className="mt-2 border p-2 rounded"
-                >
-                  <option value="">Assign Lawyer</option>
-                  {lawyers.map((l) => (
-                    <option key={l.id} value={l.id}>
-                      {l.name}
-                    </option>
+                      <td className="py-3">
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
+                            c.status
+                          )}`}
+                        >
+                          {c.status}
+                        </span>
+                      </td>
+
+                      <td className="py-3">
+                        {c.lawyer_name || "Not Assigned"}
+                      </td>
+
+                      <td className="py-3">
+                        {c.document_path ? (
+                          <div className="flex gap-2">
+                            <a
+                              href={`${API_URL}/uploads/${c.document_path}`}
+                              target="_blank"
+                              className="text-blue-600"
+                            >
+                              View
+                            </a>
+                            <a
+                              href={`${API_URL}/uploads/${c.document_path}`}
+                              download
+                              className="text-green-600"
+                            >
+                              Download
+                            </a>
+                          </div>
+                        ) : (
+                          "No file"
+                        )}
+                      </td>
+
+                      <td className="py-3">
+                        <select
+                          onChange={(e) =>
+                            assignLawyer(c.id, e.target.value)
+                          }
+                          className="border p-2 rounded-xl"
+                          defaultValue=""
+                        >
+                          <option value="">Select</option>
+                          {lawyers.map((l) => (
+                            <option key={l.id} value={l.id}>
+                              {l.name}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                    </tr>
                   ))}
-                </select>
-
-                <button
-                  onClick={() => fetchTimeline(c.id)}
-                  className="mt-2 ml-3 bg-gray-800 text-white px-2 py-1 rounded"
-                >
-                  View Timeline
-                </button>
-
-                {selectedId === c.id && (
-                  <div className="mt-3 bg-gray-50 p-3 rounded">
-                    <h3 className="font-bold mb-2">Timeline</h3>
-                    {timeline.length === 0 ? (
-                      <p>No updates yet.</p>
-                    ) : (
-                      timeline.map((t) => (
-                        <div key={t.id} className="mb-2 border-b pb-2">
-                          <p><strong>Status:</strong> {t.status}</p>
-                          <p><strong>Remark:</strong> {t.remark}</p>
-                          <p className="text-sm text-gray-500">
-                            {new Date(t.created_at).toLocaleString()}
-                          </p>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
-            ))
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>
-    </ProtectedRoute>
+    </main>
   );
 }
