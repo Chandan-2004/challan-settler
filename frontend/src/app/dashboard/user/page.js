@@ -15,11 +15,9 @@ export default function UserDashboard() {
   const [challans, setChallans] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
   // Fetch challans
   const fetchChallans = async () => {
+    const token = localStorage.getItem("token");
     try {
       const res = await fetch(`${API_URL}/api/challans/my`, {
         headers: {
@@ -48,7 +46,7 @@ export default function UserDashboard() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
+    const token = localStorage.getItem("token"); 
     try {
       const formData = new FormData();
       formData.append("challan_number", form.challan_number);

@@ -8,11 +8,8 @@ const API_URL =
 export default function AdminDashboard() {
   const [challans, setChallans] = useState([]);
   const [lawyers, setLawyers] = useState([]);
-
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
   const fetchData = async () => {
+    const token = localStorage.getItem("token");
     try {
       const challanRes = await fetch(`${API_URL}/api/challans/all`, {
         headers: { Authorization: `Bearer ${token}` },

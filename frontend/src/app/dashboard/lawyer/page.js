@@ -9,11 +9,8 @@ export default function LawyerDashboard() {
   const [status, setStatus] = useState("");
   const [remark, setRemark] = useState("");
   const [selectedId, setSelectedId] = useState(null);
-
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
   const fetchChallans = async () => {
+    const token = localStorage.getItem("token");
     try {
       const res = await fetch(`${API_URL}/api/challans/assigned`, {
         headers: {
