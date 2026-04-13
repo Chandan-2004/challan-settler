@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
+import toast from "react-hot-toast";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function LawyerDashboard() {
@@ -55,18 +55,18 @@ export default function LawyerDashboard() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.message || "Update failed");
+        toast.error("Update failed");
         return;
       }
 
-      alert("Status updated");
+      toast.success("Status updated");
       setStatus("");
       setRemark("");
       setSelectedId(null);
       fetchChallans();
     } catch (err) {
       console.error(err);
-      alert("Server error");
+      toast.error("Server error");
     }
   };
 

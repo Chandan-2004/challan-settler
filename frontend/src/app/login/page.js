@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
+import toast from "react-hot-toast";
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://challan-settler.onrender.com";
 
@@ -40,7 +40,7 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.message || "Login failed");
+        toast.error(data.message || "Login failed");
         return;
       }
 
@@ -56,7 +56,7 @@ export default function LoginPage() {
       }
     } catch (error) {
       console.error("Login Error:", error);
-      alert("Server error");
+      toast.error("Server error");
     } finally {
       setLoading(false);
     }

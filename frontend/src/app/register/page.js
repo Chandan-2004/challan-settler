@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
+import toast from "react-hot-toast";
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://challan-settler.onrender.com";
 
@@ -47,15 +47,15 @@ export default function RegisterPage() {
       }
 
       if (!response.ok) {
-        alert(data.message || "Registration failed");
+        toast.error(data.message || "Registration failed");
         return;
       }
 
-      alert(data.message || "Registration successful");
+      toast.success(data.message || "Registration successful");
       router.push("/login");
     } catch (error) {
       console.error("Register Error:", error);
-      alert("Server error");
+      toast.error("Server error");
     } finally {
       setLoading(false);
     }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
+import toast from "react-hot-toast";
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://challan-settler.onrender.com";
 
@@ -55,15 +55,15 @@ export default function AdminDashboard() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.message || "Assignment failed");
+        toast.error("Assignment failed");
         return;
       }
 
-      alert("Lawyer assigned");
+      toast.success("Lawyer assigned");
       fetchData();
     } catch (err) {
       console.error(err);
-      alert("Server error");
+      toast.error("Server error");
     }
   };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
+import toast from "react-hot-toast";
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://challan-settler.onrender.com";
 
@@ -64,18 +64,18 @@ export default function UserDashboard() {
       });
 
       if (!res.ok) {
-        alert("Upload failed");
+        toast.error("Upload failed");
         return;
       }
 
-      alert("Challan uploaded successfully");
+      toast.success("Challan uploaded successfully");
 
       setForm({ challan_number: "", vehicle_number: "" });
       setFile(null);
       fetchChallans();
     } catch (err) {
       console.error(err);
-      alert("Server error");
+      toast.error("Server error");
     } finally {
       setLoading(false);
     }
