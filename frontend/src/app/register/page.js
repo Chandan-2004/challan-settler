@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://challan-settler.onrender.com";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://challan-settler.onrender.com";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -30,7 +31,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/register`, {
+      const response = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -38,14 +39,19 @@ export default function RegisterPage() {
         body: JSON.stringify(form),
       });
 
-      const data = await res.json();
+      let data = {};
+      try {
+        data = await response.json();
+      } catch {
+        data = {};
+      }
 
-      if (!res.ok) {
+      if (!response.ok) {
         alert(data.message || "Registration failed");
         return;
       }
 
-      alert("Registration successful");
+      alert(data.message || "Registration successful");
       router.push("/login");
     } catch (error) {
       console.error("Register Error:", error);
@@ -56,18 +62,23 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-100 flex items-center justify-center px-6">
-      <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md">
-        <h1 className="text-3xl font-bold mb-6 text-center text-blue-700">
-          Register
-        </h1>
+    <main className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 flex items-center justify-center px-6 py-10">
+      <div className="w-full max-w-md bg-white/90 backdrop-blur-xl shadow-2xl rounded-3xl p-8 border border-white/70">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-extrabold text-blue-700 mb-2">
+            Create Account
+          </h1>
+          <p className="text-gray-600">
+            Register to start managing challans
+          </p>
+        </div>
 
         <form onSubmit={handleSubmit}>
           <input
             type="text"
             name="name"
             placeholder="Full Name"
-            className="w-full mb-3 p-3 border rounded-lg"
+            className="w-full mb-4 p-3.5 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500"
             value={form.name}
             onChange={handleChange}
             required
@@ -76,9 +87,9 @@ export default function RegisterPage() {
           <input
             type="email"
             name="email"
-            placeholder="Email"
+            placeholder="Email address"
             autoComplete="email"
-            className="w-full mb-3 p-3 border rounded-lg"
+            className="w-full mb-4 p-3.5 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500"
             value={form.email}
             onChange={handleChange}
             required
@@ -89,7 +100,7 @@ export default function RegisterPage() {
             name="password"
             placeholder="Password"
             autoComplete="new-password"
-            className="w-full mb-3 p-3 border rounded-lg"
+            className="w-full mb-4 p-3.5 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500"
             value={form.password}
             onChange={handleChange}
             required
@@ -97,7 +108,7 @@ export default function RegisterPage() {
 
           <select
             name="role"
-            className="w-full mb-4 p-3 border rounded-lg"
+            className="w-full mb-5 p-3.5 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             value={form.role}
             onChange={handleChange}
           >
@@ -108,13 +119,13 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-2xl font-semibold shadow-lg transition disabled:opacity-70"
           >
             {loading ? "Registering..." : "Register"}
           </button>
         </form>
 
-        <p className="mt-4 text-center text-gray-600">
+        <p className="mt-6 text-center text-gray-600">
           Already have an account?{" "}
           <Link href="/login" className="text-blue-600 font-semibold">
             Login

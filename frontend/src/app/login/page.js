@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://challan-settler.onrender.com";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -62,19 +63,24 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-100 flex items-center justify-center px-6">
-      <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md">
-        <h1 className="text-3xl font-bold mb-6 text-center text-blue-700">
-          Login
-        </h1>
+    <main className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 flex items-center justify-center px-6 py-10">
+      <div className="w-full max-w-md bg-white/90 backdrop-blur-xl shadow-2xl rounded-3xl p-8 border border-white/70">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-extrabold text-blue-700 mb-2">
+            Welcome Back
+          </h1>
+          <p className="text-gray-600">
+            Sign in to continue to your dashboard
+          </p>
+        </div>
 
         <form onSubmit={handleSubmit}>
           <input
             type="email"
             name="email"
-            placeholder="Email"
+            placeholder="Email address"
             autoComplete="email"
-            className="w-full mb-3 p-3 border rounded-lg"
+            className="w-full mb-4 p-3.5 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500"
             value={form.email}
             onChange={handleChange}
             required
@@ -85,7 +91,7 @@ export default function LoginPage() {
             name="password"
             placeholder="Password"
             autoComplete="current-password"
-            className="w-full mb-4 p-3 border rounded-lg"
+            className="w-full mb-5 p-3.5 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500"
             value={form.password}
             onChange={handleChange}
             required
@@ -94,13 +100,13 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-2xl font-semibold shadow-lg transition disabled:opacity-70"
           >
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
-        <p className="mt-4 text-center text-gray-600">
+        <p className="mt-6 text-center text-gray-600">
           Don&apos;t have an account?{" "}
           <Link href="/register" className="text-blue-600 font-semibold">
             Register
