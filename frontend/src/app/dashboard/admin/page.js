@@ -78,6 +78,33 @@ export default function AdminDashboard() {
         return "bg-gray-100 text-gray-700";
     }
   };
+  const deleteUser = async (id) => {
+  const token = localStorage.getItem("token");
+
+  if (!confirm("Are you sure?")) return;
+
+  try {
+    const res = await fetch(`${API_URL}/api/auth/delete/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      toast.error(data.message || "Delete failed");
+      return;
+    }
+
+    toast.success("User deleted");
+    fetchData();
+  } catch (err) {
+    console.error(err);
+    toast.error("Server error");
+  }
+};
   const total = challans.length;
 const assigned = challans.filter(c => c.status === "ASSIGNED").length;
 const inProgress = challans.filter(c => c.status === "IN_PROGRESS").length;
@@ -109,6 +136,38 @@ const completed = challans.filter(c => c.status === "COMPLETED").length;
     <p className="text-green-700">Completed</p>
     <h2 className="text-2xl font-bold">{completed}</h2>
   </div>
+</div>
+<div className="bg-white p-6 rounded-3xl shadow-lg mb-10">
+  <h2 className="text-xl font-semibold mb-4">Users & Lawyers</h2>
+
+  <table className="w-full">
+    <thead>
+      <tr className="border-b">
+        <th>Name</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {lawyers.map((u) => (
+        <tr key={u.id} className="border-b">
+          <td>{u.name}</td>
+          <td>{u.email}</td>
+          <td>{u.role}</td>
+          <td>
+            <button
+              onClick={() => deleteUser(u.id)}
+              className="text-red-600"
+            >
+              Delete
+            </button>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
 </div>
         <div className="bg-white p-6 rounded-3xl shadow-lg">
           <h2 className="text-xl font-semibold mb-6">

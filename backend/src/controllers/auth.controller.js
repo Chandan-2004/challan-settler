@@ -92,3 +92,29 @@ exports.getAllUsers = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+exports.deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Prevent deleting admin
+    const userCheck = await pool.query(
+      "SELECT role FROM users WHERE id = $1",
+      [id]
+    );
+
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (userCheck.rows[0].role === "ADMIN") {
+      return res.status(400).json({ message: "Cannot delete admin" });
+    }
+
+    await pool.query("DELETE FROM users WHERE id = $1", [id]);
+
+    res.json({ message: "User deleted successfully" });
+  } catch (error) {
+    console.error("DeleteUser Error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
