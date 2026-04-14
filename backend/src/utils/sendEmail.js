@@ -1,15 +1,17 @@
 const resend = require("../config/resend");
 
 const sendEmail = (to, subject, html) => {
+  console.log("Sending email to:", to);
+
   resend.emails
     .send({
       from: "onboarding@resend.dev",
-      to,
+      to: [to], // ✅ IMPORTANT (array)
       subject,
       html,
     })
-    .then(() => console.log(`Email sent to ${to}`))
-    .catch((err) => console.error("Email error:", err));
+    .then((res) => console.log("Email success:", res))
+    .catch((err) => console.error("Email failed:", err));
 };
 
 module.exports = sendEmail;

@@ -40,18 +40,20 @@ exports.register = async (req, res) => {
     );
 
     // ✅ ADMIN EMAIL
-    const adminEmail = process.env.ADMIN_EMAIL;
+   const adminEmail = process.env.ADMIN_EMAIL;
 
-console.log("ADMIN EMAIL:", adminEmail); // 🔍 debug
+console.log("ADMIN EMAIL VALUE:", adminEmail); // 👈 add this
 
 if (adminEmail && adminEmail !== email) {
+  console.log("Sending admin email..."); // 👈 add this
+
   sendEmail(
     adminEmail,
     "New User Registered",
     `<p>New user registered: ${email}</p>`
   );
 } else {
-  console.log("Admin email skipped or not set");
+  console.log("Admin email skipped");
 }
 
     // 🔥 Response
