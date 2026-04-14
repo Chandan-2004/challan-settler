@@ -6,10 +6,12 @@ exports.register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
+    // 🔹 Validation
     if (!name || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
+    // 🔹 Check existing user
     const existingUser = await pool.query(
       "SELECT id FROM users WHERE email = $1",
       [email]
@@ -19,35 +21,39 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "Email already exists" });
     }
 
+    // 🔹 Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // 🔹 Insert user
     const result = await pool.query(
       `INSERT INTO users (name, email, password, role)
        VALUES ($1, $2, $3, $4)
        RETURNING id, name, email, role`,
       [name, email, hashedPassword, role || "USER"]
     );
-    try {
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "Registration Successful",
-      html: `<h2>Welcome to Challan Settler</h2>`,
-    });
 
-    console.log("EMAIL SENT");
-  } catch (err) {
-    console.error("EMAIL ERROR:", err.message);
-  }
+    // 🔥 Send email in background (NON-BLOCKING)
+    transporter
+      .sendMail({
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: "Registration Successful",
+        html: `<h2>Welcome to Challan Settler</h2>
+               <p>Your account has been created successfully.</p>`,
+      })
+      .then(() => console.log("Email sent"))
+      .catch((err) => console.error("Email error:", err.message));
+
+    // 🔥 Send response immediately
     return res.status(201).json({
       message: "User registered successfully",
       user: result.rows[0],
     });
+
   } catch (error) {
     console.error("Register Error:", error);
     return res.status(500).json({ message: "Server error" });
   }
- 
 };
 
 exports.login = async (req, res) => {
