@@ -34,8 +34,7 @@ exports.register = async (req, res) => {
       [name, email, hashedPassword, role || "USER"]
     );
     sendEmail(email, "Registration Successful", "<h2>Welcome</h2>");
-  .then(() => console.log("Email sent"))
-  .catch((err) => console.error("Email error:", err));
+  
   // ✅ ADMIN EMAIL
 sendEmail(email, "Registration Successful", "<h2>Welcome</h2>");
     // 🔥 Send response immediately
