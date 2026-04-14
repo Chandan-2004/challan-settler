@@ -1,5 +1,4 @@
 const pool = require("../config/database");
-const transporter = require("../config/mailer");
 const sendEmail = require("../utils/sendEmail");
 exports.createChallan = async (req, res) => {
   try {
@@ -64,8 +63,6 @@ exports.getAllChallans = async (req, res) => {
   }
 };
 exports.assignLawyer = async (req, res) => {
-  console.log("REQ BODY:", req.body);
-  console.log("TYPE OF lawyer_id:", typeof req.body.lawyer_id);
   try {
     const { challan_id, lawyer_id } = req.body;
 
@@ -75,7 +72,7 @@ exports.assignLawyer = async (req, res) => {
       });
     }
 
-    // Check challan exists
+    // 🔹 Check challan exists
     const challanCheck = await pool.query(
       "SELECT * FROM challans WHERE id = $1",
       [challan_id]
@@ -85,22 +82,24 @@ exports.assignLawyer = async (req, res) => {
       return res.status(404).json({ message: "Challan not found" });
     }
 
-    // Check lawyer exists
+    // 🔹 Check lawyer exists
     const lawyerCheck = await pool.query(
       "SELECT * FROM users WHERE id = $1",
       [lawyer_id]
     );
-    console.log("LAWYER QUERY RESULT:", lawyerCheck.rows);
+
     if (lawyerCheck.rows.length === 0) {
       return res.status(404).json({ message: "Lawyer not found" });
     }
 
-    if (
-      (lawyerCheck.rows[0].role || "").trim().toUpperCase() !== "LAWYER"
-    ) {
+    const lawyer = lawyerCheck.rows[0];
+
+    // 🔹 Ensure role is LAWYER
+    if ((lawyer.role || "").trim().toUpperCase() !== "LAWYER") {
       return res.status(400).json({ message: "Selected user is not a lawyer" });
     }
 
+    // 🔹 Update challan
     const result = await pool.query(
       `UPDATE challans
        SET lawyer_id = $1, status = 'ASSIGNED'
@@ -109,18 +108,26 @@ exports.assignLawyer = async (req, res) => {
       [lawyer_id, challan_id]
     );
 
-    res.json({
+    // ✅ SEND EMAIL (safe + non-blocking)
+    try {
+      sendEmail(
+        lawyer.email, // ✅ FIXED
+        "New Challan Assigned",
+        `<p>You have been assigned a new challan.</p>`
+      );
+    } catch (err) {
+      console.error("Email error:", err);
+    }
+
+    // ✅ RESPONSE LAST
+    return res.json({
       message: "Lawyer assigned successfully",
       challan: result.rows[0],
     });
-    sendEmail(
-  lawyerEmail,
-  "New Challan Assigned",
-  "<p>You have a new challan</p>"
-);
+
   } catch (error) {
     console.error("AssignLawyer Error:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 exports.getAssignedChallans = async (req, res) => {
@@ -141,11 +148,13 @@ exports.updateStatus = async (req, res) => {
   try {
     const { challan_id, status, remark } = req.body;
 
+    // 🔹 Update status
     await pool.query(
       `UPDATE challans SET status = $1 WHERE id = $2`,
       [status, challan_id]
     );
 
+    // 🔹 Insert timeline update
     await pool.query(
       `INSERT INTO challan_updates 
        (challan_id, status, remark, updated_by)
@@ -153,20 +162,35 @@ exports.updateStatus = async (req, res) => {
       [challan_id, status, remark, req.user.id]
     );
 
-    res.json({ message: "Status updated" });
-    sendEmail(
-  userEmail,
-  "Challan Status Updated",
-  `<p>Status: ${status}</p>`
-);
+    // 🔹 Get user email
+    const userRes = await pool.query(
+      `SELECT email FROM users 
+       WHERE id = (SELECT user_id FROM challans WHERE id = $1)`,
+      [challan_id]
+    );
+
+    const userEmail = userRes.rows[0]?.email;
+
+    // 🔥 Send email safely
+    if (userEmail) {
+      try {
+        sendEmail(
+          userEmail,
+          "Challan Status Updated",
+          `<p>Your challan status is now: <b>${status}</b></p>`
+        );
+      } catch (err) {
+        console.error("Email error:", err);
+      }
+    }
+
+    // ✅ Send response LAST
+    return res.json({ message: "Status updated" });
+
   } catch (error) {
     console.error("UpdateStatus Error:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
-  const userRes = await pool.query(
-  "SELECT email FROM users WHERE id = (SELECT user_id FROM challans WHERE id = $1)",
-  [challan_id]
-);
 };
 
 exports.getTimeline = async (req, res) => {

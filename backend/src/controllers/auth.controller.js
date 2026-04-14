@@ -1,8 +1,6 @@
 const pool = require("../config/database");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const transporter = require("../config/mailer");
-const resend = require("../config/resend");
 const sendEmail = require("../utils/sendEmail");
 exports.register = async (req, res) => {
   try {
@@ -33,11 +31,28 @@ exports.register = async (req, res) => {
        RETURNING id, name, email, role`,
       [name, email, hashedPassword, role || "USER"]
     );
-    sendEmail(email, "Registration Successful", "<h2>Welcome</h2>");
-  
-  // ✅ ADMIN EMAIL
-sendEmail(email, "Registration Successful", "<h2>Welcome</h2>");
-    // 🔥 Send response immediately
+
+    // ✅ USER EMAIL
+    sendEmail(
+      email,
+      "Registration Successful",
+      `<h2>Welcome to Challan Settler</h2>`
+    );
+
+    // ✅ ADMIN EMAIL
+    const adminEmail = process.env.ADMIN_EMAIL;
+
+    if (adminEmail) {
+      sendEmail(
+        adminEmail,
+        "New User Registered",
+        `<p>New user registered: ${email}</p>`
+      );
+    } else {
+      console.log("ADMIN EMAIL NOT SET");
+    }
+
+    // 🔥 Response
     return res.status(201).json({
       message: "User registered successfully",
       user: result.rows[0],
@@ -48,7 +63,6 @@ sendEmail(email, "Registration Successful", "<h2>Welcome</h2>");
     return res.status(500).json({ message: "Server error" });
   }
 };
-
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
