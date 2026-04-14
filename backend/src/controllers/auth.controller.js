@@ -2,6 +2,7 @@ const pool = require("../config/database");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const transporter = require("../config/mailer");
+const resend = require("../config/resend");
 exports.register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -31,19 +32,18 @@ exports.register = async (req, res) => {
        RETURNING id, name, email, role`,
       [name, email, hashedPassword, role || "USER"]
     );
-
-    // 🔥 Send email in background (NON-BLOCKING)
-    transporter
-      .sendMail({
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: "Registration Successful",
-        html: `<h2>Welcome to Challan Settler</h2>
-               <p>Your account has been created successfully.</p>`,
-      })
-      .then(() => console.log("Email sent"))
-      .catch((err) => console.error("Email error:", err.message));
-
+    resend.emails
+  .send({
+    from: "onboarding@resend.dev",
+    to: email,
+    subject: "Registration Successful",
+    html: `
+      <h2>Welcome to Challan Settler</h2>
+      <p>Your account has been created successfully.</p>
+    `,
+  })
+  .then(() => console.log("Email sent"))
+  .catch((err) => console.error("Email error:", err));
     // 🔥 Send response immediately
     return res.status(201).json({
       message: "User registered successfully",
