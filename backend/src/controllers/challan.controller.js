@@ -143,7 +143,6 @@ exports.getAssignedChallans = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 exports.updateStatus = async (req, res) => {
   try {
     const { challan_id, status, remark } = req.body;
@@ -154,7 +153,7 @@ exports.updateStatus = async (req, res) => {
       [status, challan_id]
     );
 
-    // 🔹 Insert timeline update
+    // 🔹 Insert timeline
     await pool.query(
       `INSERT INTO challan_updates 
        (challan_id, status, remark, updated_by)
@@ -163,28 +162,30 @@ exports.updateStatus = async (req, res) => {
     );
 
     // 🔹 Get user email
-    const userRes = await pool.query(
-      `SELECT email FROM users 
-       WHERE id = (SELECT user_id FROM challans WHERE id = $1)`,
-      [challan_id]
-    );
+    let userEmail = null;
 
-    const userEmail = userRes.rows[0]?.email;
+    try {
+      const userRes = await pool.query(
+        `SELECT email FROM users 
+         WHERE id = (SELECT user_id FROM challans WHERE id = $1)`,
+        [challan_id]
+      );
 
-    // 🔥 Send email safely
-    if (userEmail) {
-      try {
-        sendEmail(
-          userEmail,
-          "Challan Status Updated",
-          `<p>Your challan status is now: <b>${status}</b></p>`
-        );
-      } catch (err) {
-        console.error("Email error:", err);
-      }
+      userEmail = userRes.rows[0]?.email;
+    } catch (err) {
+      console.log("User email fetch error:", err.message);
     }
 
-    // ✅ Send response LAST
+    // 🔥 SAFE EMAIL (never crash API)
+    if (userEmail) {
+      sendEmail(
+        userEmail,
+        "Challan Status Updated",
+        `<p>Status updated to: ${status}</p>`
+      );
+    }
+
+    // ✅ ALWAYS respond
     return res.json({ message: "Status updated" });
 
   } catch (error) {
@@ -192,7 +193,6 @@ exports.updateStatus = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
-
 exports.getTimeline = async (req, res) => {
   try {
     const result = await pool.query(

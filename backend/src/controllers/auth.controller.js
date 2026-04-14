@@ -42,15 +42,17 @@ exports.register = async (req, res) => {
     // ✅ ADMIN EMAIL
     const adminEmail = process.env.ADMIN_EMAIL;
 
-    if (adminEmail) {
-      sendEmail(
-        adminEmail,
-        "New User Registered",
-        `<p>New user registered: ${email}</p>`
-      );
-    } else {
-      console.log("ADMIN EMAIL NOT SET");
-    }
+console.log("ADMIN EMAIL:", adminEmail); // 🔍 debug
+
+if (adminEmail && adminEmail !== email) {
+  sendEmail(
+    adminEmail,
+    "New User Registered",
+    `<p>New user registered: ${email}</p>`
+  );
+} else {
+  console.log("Admin email skipped or not set");
+}
 
     // 🔥 Response
     return res.status(201).json({
