@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 const sendEmail = require("../utils/sendEmail");
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, phone, address } = req.body;
 
     // 🔹 Validation
     if (!name || !email || !password) {
@@ -26,8 +26,8 @@ exports.register = async (req, res) => {
 
     // 🔹 Insert user
     const result = await pool.query(
-      `INSERT INTO users (name, email, password, role)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO users (name, email, password, role, phone, address)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id, name, email, role`,
       [name, email, hashedPassword, role || "USER"]
     );

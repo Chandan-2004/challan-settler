@@ -118,6 +118,22 @@ export default function HomePage() {
             </p>
           </div>
         </div>
+        <div className="mt-16 bg-white p-6 rounded-2xl shadow text-center">
+  <h2 className="text-xl font-semibold mb-2">
+    Customer Support
+  </h2>
+
+  <p className="text-gray-600 mb-3">
+    Need help? Contact our support team
+  </p>
+
+  <a
+    href="mailto:challansettler@gmail.com"
+    className="text-blue-600 font-semibold underline"
+  >
+    challansettler@gmail.com
+  </a>
+</div>
       </section>
     </main>
   );

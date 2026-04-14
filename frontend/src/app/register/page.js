@@ -105,8 +105,22 @@ export default function RegisterPage() {
             onChange={handleChange}
             required
           />
-          <input name="phone" placeholder="Phone" />
-          <input name="address" placeholder="Address" />
+          <input
+  type="text"
+  name="phone"
+  placeholder="Phone Number"
+  className="w-full mb-4 p-3.5 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500"
+  value={form.phone}
+  onChange={handleChange}
+/>
+<input
+  type="text"
+  name="address"
+  placeholder="Address"
+  className="w-full mb-4 p-3.5 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500"
+  value={form.address}
+  onChange={handleChange}
+/>
           <input name="specialization" placeholder="Specialization (for lawyers)" />
           <select
             name="role"
