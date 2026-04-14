@@ -1,5 +1,6 @@
 const pool = require("../config/database");
 const transporter = require("../config/mailer");
+const sendEmail = require("../utils/sendEmail");
 exports.createChallan = async (req, res) => {
   try {
     const { challan_number, vehicle_number } = req.body;
@@ -112,16 +113,15 @@ exports.assignLawyer = async (req, res) => {
       message: "Lawyer assigned successfully",
       challan: result.rows[0],
     });
+    sendEmail(
+  lawyerEmail,
+  "New Challan Assigned",
+  "<p>You have a new challan</p>"
+);
   } catch (error) {
     console.error("AssignLawyer Error:", error);
     res.status(500).json({ message: "Server error" });
   }
-  await transporter.sendMail({
-  from: process.env.EMAIL_USER,
-  to: lawyerCheck.rows[0].email,
-  subject: "New Challan Assigned",
-  html: `<p>You have been assigned a new challan.</p>`,
-});
 };
 exports.getAssignedChallans = async (req, res) => {
   try {
@@ -154,6 +154,11 @@ exports.updateStatus = async (req, res) => {
     );
 
     res.json({ message: "Status updated" });
+    sendEmail(
+  userEmail,
+  "Challan Status Updated",
+  `<p>Status: ${status}</p>`
+);
   } catch (error) {
     console.error("UpdateStatus Error:", error);
     res.status(500).json({ message: "Server error" });
@@ -162,13 +167,6 @@ exports.updateStatus = async (req, res) => {
   "SELECT email FROM users WHERE id = (SELECT user_id FROM challans WHERE id = $1)",
   [challan_id]
 );
-
-await transporter.sendMail({
-  from: process.env.EMAIL_USER,
-  to: userRes.rows[0].email,
-  subject: "Challan Status Updated",
-  html: `<p>Your challan status is now: ${status}</p>`,
-});
 };
 
 exports.getTimeline = async (req, res) => {

@@ -44,6 +44,16 @@ exports.register = async (req, res) => {
   })
   .then(() => console.log("Email sent"))
   .catch((err) => console.error("Email error:", err));
+  // ✅ ADMIN EMAIL
+resend.emails
+  .send({
+    from: "onboarding@resend.dev",
+    to: process.env.ADMIN_EMAIL, // 👈 important
+    subject: "New User Registered",
+    html: `<p>New user registered: ${email}</p>`,
+  })
+  .then(() => console.log("Admin email sent"))
+  .catch((err) => console.error("Admin email error:", err));
     // 🔥 Send response immediately
     return res.status(201).json({
       message: "User registered successfully",
