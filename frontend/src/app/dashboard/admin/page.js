@@ -177,6 +177,26 @@ export default function AdminDashboard() {
                   <td>{u.name}</td>
                   <td>{u.email}</td>
                   <td>{u.role}</td>
+                  <td>{u.phone}</td>
+                  <td>{u.address}</td>
+                  <td>
+                    <a
+                    href={`mailto:${u.email}`}
+                    className="text-blue-600 underline"
+                    >
+                      Contact
+                      </a>
+                      <a
+  href={`https://wa.me/${u.phone}`}
+  target="_blank"
+  className="text-green-600 ml-2"
+>
+  WhatsApp
+</a>
+<a href={`tel:${u.phone}`} className="text-green-600 ml-2">
+  Call
+</a>
+                      </td>
                   <td>
                     <button
                       onClick={() => deleteUser(u.id)}
@@ -202,6 +222,27 @@ export default function AdminDashboard() {
                   <td>{u.name}</td>
                   <td>{u.email}</td>
                   <td>{u.role}</td>
+                  <td>{u.phone}</td>
+                  <td>{u.address}</td>
+                  <td>{u.specialization}</td>
+                  <td>
+  <a
+    href={`mailto:${u.email}`}
+    className="text-blue-600 underline"
+  >
+    Contact
+  </a>
+</td>
+<a
+  href={`https://wa.me/${u.phone}`}
+  target="_blank"
+  className="text-green-600 ml-2"
+>
+  WhatsApp
+</a>
+<a href={`tel:${u.phone}`} className="text-green-600 ml-2">
+  Call
+</a>
                   <td>
                     <button
                       onClick={() => deleteUser(u.id)}
