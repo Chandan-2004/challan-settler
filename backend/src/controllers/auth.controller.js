@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const transporter = require("../config/mailer");
 const resend = require("../config/resend");
+const sendEmail = require("../utils/sendEmail");
 exports.register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -32,28 +33,11 @@ exports.register = async (req, res) => {
        RETURNING id, name, email, role`,
       [name, email, hashedPassword, role || "USER"]
     );
-    resend.emails
-  .send({
-    from: "onboarding@resend.dev",
-    to: email,
-    subject: "Registration Successful",
-    html: `
-      <h2>Welcome to Challan Settler</h2>
-      <p>Your account has been created successfully.</p>
-    `,
-  })
+    sendEmail(email, "Registration Successful", "<h2>Welcome</h2>");
   .then(() => console.log("Email sent"))
   .catch((err) => console.error("Email error:", err));
   // ✅ ADMIN EMAIL
-resend.emails
-  .send({
-    from: "onboarding@resend.dev",
-    to: process.env.ADMIN_EMAIL, // 👈 important
-    subject: "New User Registered",
-    html: `<p>New user registered: ${email}</p>`,
-  })
-  .then(() => console.log("Admin email sent"))
-  .catch((err) => console.error("Admin email error:", err));
+sendEmail(email, "Registration Successful", "<h2>Welcome</h2>");
     // 🔥 Send response immediately
     return res.status(201).json({
       message: "User registered successfully",
