@@ -30,42 +30,44 @@ export default function LawyerDashboard() {
   }, []);
 
   const updateStatus = async () => {
-    if (!selectedId || !status) {
-      alert("Select status");
+  if (!selectedId || !status) {
+    alert("Select status");
+    return;
+  }
+
+  const token = localStorage.getItem("token"); // ✅ FIX
+
+  try {
+    const res = await fetch(`${API_URL}/api/challans/status`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`, // ✅ now works
+      },
+      body: JSON.stringify({
+        challan_id: selectedId,
+        status,
+        remark,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      toast.error(data.message || "Update failed");
       return;
     }
 
-    try {
-      const res = await fetch(`${API_URL}/api/challans/status`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          challan_id: selectedId,
-          status,
-          remark,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        toast.error("Update failed");
-        return;
-      }
-
-      toast.success("Status updated");
-      setStatus("");
-      setRemark("");
-      setSelectedId(null);
-      fetchChallans();
-    } catch (err) {
-      console.error(err);
-      toast.error("Server error");
-    }
-  };
+    toast.success("Status updated");
+    setStatus("");
+    setRemark("");
+    setSelectedId(null);
+    fetchChallans();
+  } catch (err) {
+    console.error("Update Error:", err);
+    toast.error("Server error");
+  }
+};
 
   const getStatusColor = (status) => {
     switch (status) {
