@@ -13,7 +13,7 @@ exports.createChallan = async (req, res) => {
     const result = await pool.query(
       `INSERT INTO challans 
        (user_id, challan_number, vehicle_number, document_path, status, project_id, due_date)
-       VALUES ($1, $2, $3, $4, $5, $6)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
       [
         req.user.id,
