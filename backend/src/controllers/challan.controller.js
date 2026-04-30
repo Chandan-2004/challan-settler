@@ -1,8 +1,10 @@
 const pool = require("../config/database");
 const sendEmail = require("../utils/sendEmail");
+
+// ================= CREATE =================
 exports.createChallan = async (req, res) => {
   try {
-    const { challan_number, vehicle_number } = req.body;
+    const { challan_number, vehicle_number, project_id, due_date} = req.body;
 
     if (!challan_number || !vehicle_number) {
       return res.status(400).json({ message: "All fields required" });
@@ -10,20 +12,22 @@ exports.createChallan = async (req, res) => {
 
     const result = await pool.query(
       `INSERT INTO challans 
-       (user_id, challan_number, vehicle_number, document_path, status)
-       VALUES ($1, $2, $3, $4, $5)
+       (user_id, challan_number, vehicle_number, document_path, status, project_id, due_date)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
       [
         req.user.id,
         challan_number,
         vehicle_number,
         req.file ? req.file.path : null,
-        "SUBMITTED",
+        "SUBMITTED", // ✅ FIXED ORDER
+        project_id,
+        due_date,
       ]
     );
 
     res.status(201).json({
-      message: "Challan uploaded",
+      message: "Task created successfully",
       challan: result.rows[0],
     });
   } catch (error) {
@@ -32,10 +36,15 @@ exports.createChallan = async (req, res) => {
   }
 };
 
+// ================= USER DASHBOARD =================
 exports.getMyChallans = async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT * FROM challans WHERE user_id = $1 ORDER BY id DESC",
+      `SELECT c.*, p.name AS project_name
+       FROM challans c
+       LEFT JOIN projects p ON c.project_id = p.id
+       WHERE c.user_id = $1
+       ORDER BY c.id DESC`,
       [req.user.id]
     );
 
@@ -46,15 +55,20 @@ exports.getMyChallans = async (req, res) => {
   }
 };
 
+// ================= ADMIN DASHBOARD =================
 exports.getAllChallans = async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT c.*, u.name as user_name, l.name as lawyer_name
-      FROM challans c
-      LEFT JOIN users u ON c.user_id = u.id
-      LEFT JOIN users l ON c.lawyer_id = l.id
-      ORDER BY c.id DESC
-    `);
+    const result = await pool.query(
+      `SELECT c.*, 
+              p.name AS project_name,
+              u.name AS user_name,
+              l.name AS lawyer_name
+       FROM challans c
+       LEFT JOIN projects p ON c.project_id = p.id
+       LEFT JOIN users u ON c.user_id = u.id
+       LEFT JOIN users l ON c.lawyer_id = l.id
+       ORDER BY c.id DESC`
+    );
 
     res.json(result.rows);
   } catch (error) {
@@ -62,6 +76,8 @@ exports.getAllChallans = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// ================= ASSIGN =================
 exports.assignLawyer = async (req, res) => {
   try {
     const { challan_id, lawyer_id } = req.body;
@@ -72,34 +88,30 @@ exports.assignLawyer = async (req, res) => {
       });
     }
 
-    // 🔹 Check challan exists
     const challanCheck = await pool.query(
       "SELECT * FROM challans WHERE id = $1",
       [challan_id]
     );
 
     if (challanCheck.rows.length === 0) {
-      return res.status(404).json({ message: "Challan not found" });
+      return res.status(404).json({ message: "Task not found" });
     }
 
-    // 🔹 Check lawyer exists
     const lawyerCheck = await pool.query(
       "SELECT * FROM users WHERE id = $1",
       [lawyer_id]
     );
 
     if (lawyerCheck.rows.length === 0) {
-      return res.status(404).json({ message: "Lawyer not found" });
+      return res.status(404).json({ message: "Member not found" });
     }
 
     const lawyer = lawyerCheck.rows[0];
 
-    // 🔹 Ensure role is LAWYER
     if ((lawyer.role || "").trim().toUpperCase() !== "LAWYER") {
-      return res.status(400).json({ message: "Selected user is not a lawyer" });
+      return res.status(400).json({ message: "Selected user is not a member" });
     }
 
-    // 🔹 Update challan
     const result = await pool.query(
       `UPDATE challans
        SET lawyer_id = $1, status = 'ASSIGNED'
@@ -108,20 +120,18 @@ exports.assignLawyer = async (req, res) => {
       [lawyer_id, challan_id]
     );
 
-    // ✅ SEND EMAIL (safe + non-blocking)
     try {
       sendEmail(
-        lawyer.email, // ✅ FIXED
-        "New Challan Assigned",
-        `<p>You have been assigned a new challan.</p>`
+        lawyer.email,
+        "New Task Assigned",
+        `<p>You have been assigned a new task.</p>`
       );
     } catch (err) {
       console.error("Email error:", err);
     }
 
-    // ✅ RESPONSE LAST
     return res.json({
-      message: "Lawyer assigned successfully",
+      message: "Member assigned successfully",
       challan: result.rows[0],
     });
 
@@ -130,10 +140,16 @@ exports.assignLawyer = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+
+// ================= LAWYER DASHBOARD =================
 exports.getAssignedChallans = async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT * FROM challans WHERE lawyer_id = $1",
+      `SELECT c.*, p.name AS project_name
+       FROM challans c
+       LEFT JOIN projects p ON c.project_id = p.id
+       WHERE c.lawyer_id = $1
+       ORDER BY c.id DESC`,
       [req.user.id]
     );
 
@@ -143,17 +159,17 @@ exports.getAssignedChallans = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// ================= UPDATE STATUS =================
 exports.updateStatus = async (req, res) => {
   try {
     const { challan_id, status, remark } = req.body;
 
-    // 🔹 Update status
     await pool.query(
       `UPDATE challans SET status = $1 WHERE id = $2`,
       [status, challan_id]
     );
 
-    // 🔹 Insert timeline
     await pool.query(
       `INSERT INTO challan_updates 
        (challan_id, status, remark, updated_by)
@@ -161,7 +177,6 @@ exports.updateStatus = async (req, res) => {
       [challan_id, status, remark, req.user.id]
     );
 
-    // 🔹 Get user email
     let userEmail = null;
 
     try {
@@ -176,16 +191,14 @@ exports.updateStatus = async (req, res) => {
       console.log("User email fetch error:", err.message);
     }
 
-    // 🔥 SAFE EMAIL (never crash API)
     if (userEmail) {
       sendEmail(
         userEmail,
-        "Challan Status Updated",
+        "Task Status Updated",
         `<p>Status updated to: ${status}</p>`
       );
     }
 
-    // ✅ ALWAYS respond
     return res.json({ message: "Status updated" });
 
   } catch (error) {
@@ -193,6 +206,8 @@ exports.updateStatus = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+
+// ================= TIMELINE =================
 exports.getTimeline = async (req, res) => {
   try {
     const result = await pool.query(

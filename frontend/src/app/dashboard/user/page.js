@@ -9,12 +9,14 @@ export default function UserDashboard() {
   const [form, setForm] = useState({
     challan_number: "",
     vehicle_number: "",
+    project_id: "",
+    due_date: "",
   });
 
   const [file, setFile] = useState(null);
   const [challans, setChallans] = useState([]);
   const [loading, setLoading] = useState(false);
-
+  const [projects, setProjects] = useState([]);
   // Fetch challans
   const fetchChallans = async () => {
     const token = localStorage.getItem("token");
@@ -34,6 +36,7 @@ export default function UserDashboard() {
 
   useEffect(() => {
     fetchChallans();
+    fetchProjects(); 
   }, []);
 
   const handleChange = (e) => {
@@ -78,7 +81,12 @@ export default function UserDashboard() {
       setLoading(false);
     }
   };
-
+  const overdue = challans.filter(
+  (c) =>
+    c.due_date &&
+    new Date(c.due_date) < new Date() &&
+    c.status !== "COMPLETED"
+);
   const getStatusColor = (status) => {
     switch (status) {
       case "SUBMITTED":
@@ -93,6 +101,18 @@ export default function UserDashboard() {
         return "bg-gray-100 text-gray-700";
     }
   };
+  const fetchProjects = async () => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API_URL}/api/projects/all`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  setProjects(data);
+};
   const total = challans.length;
 const submitted = challans.filter(c => c.status === "SUBMITTED").length;
 const assigned = challans.filter(c => c.status === "ASSIGNED").length;
@@ -104,6 +124,9 @@ const completed = challans.filter(c => c.status === "COMPLETED").length;
         <h1 className="text-3xl font-bold text-blue-700 mb-8">
           User Dashboard
         </h1>
+        <div className="mb-4 text-red-600 font-semibold">
+  Overdue Tasks: {overdue.length}
+</div>
         {/* Stats Cards */}
 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
   <div className="bg-white p-5 rounded-2xl shadow">
@@ -158,7 +181,27 @@ const completed = challans.filter(c => c.status === "COMPLETED").length;
               className="p-3 border rounded-xl"
               onChange={(e) => setFile(e.target.files[0])}
             />
+            <input
+  type="date"
+  name="due_date"
+  value={form.due_date}
+  onChange={handleChange}
+  className="w-full mb-4 p-3 border rounded"
+/>
+            <select
+  name="project_id"
+  value={form.project_id}
+  onChange={handleChange}
+  className="w-full mb-4 p-3 border rounded"
+>
+  <option value="">Select Project</option>
 
+  {projects.map((p) => (
+    <option key={p.id} value={p.id}>
+      {p.name}
+    </option>
+  ))}
+</select>
             <button
               type="submit"
               disabled={loading}
@@ -192,7 +235,7 @@ const completed = challans.filter(c => c.status === "COMPLETED").length;
                     <tr key={c.id} className="border-b hover:bg-gray-50">
                       <td className="py-3">{c.challan_number}</td>
                       <td className="py-3">{c.vehicle_number}</td>
-
+                        <td>{c.project_name || "No Project"}</td>
                       <td className="py-3">
                         <span
                           className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
@@ -225,6 +268,8 @@ const completed = challans.filter(c => c.status === "COMPLETED").length;
                           "No file"
                         )}
                       </td>
+                      <th>Due Date</th>
+                      <td>{c.due_date ? c.due_date.split("T")[0] : "N/A"}</td>
                     </tr>
                   ))}
                 </tbody>

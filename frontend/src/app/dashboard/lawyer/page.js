@@ -135,7 +135,7 @@ const completed = challans.filter(c => c.status === "COMPLETED").length;
                     <tr key={c.id} className="border-b hover:bg-gray-50">
                       <td className="py-3">{c.challan_number}</td>
                       <td className="py-3">{c.vehicle_number}</td>
-
+                        <td>{c.project_name || "No Project"}</td>
                       <td className="py-3">
                         <span
                           className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(

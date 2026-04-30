@@ -268,7 +268,7 @@ export default function AdminDashboard() {
                   <td>{c.user_name}</td>
                   <td>{c.challan_number}</td>
                   <td>{c.vehicle_number}</td>
-
+                  <td>{c.project_name || "No Project"}</td>
                   <td>
                     <span className={getStatusColor(c.status)}>
                       {c.status}

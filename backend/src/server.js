@@ -7,3 +7,4 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 app.use("/api/support", require("./routes/support.routes"));
+app.use("/api/projects", require("./routes/project.routes"));
