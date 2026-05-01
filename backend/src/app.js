@@ -12,7 +12,7 @@ const allowedOrigins = [
   "http://localhost:3000",
 ];
 
-app.use(
+/*app.use(
   cors({
     origin: function (origin, callback) {
       if (!origin) return callback(null, true);
@@ -28,8 +28,8 @@ app.use(
     },
     credentials: true,
   })
-);
-
+);*/
+app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static("src/uploads"));
 
