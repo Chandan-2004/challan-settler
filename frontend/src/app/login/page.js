@@ -4,9 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://challan-settler.onrender.com";
-
+//const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://challan-settler.onrender.com";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 export default function LoginPage() {
   const router = useRouter();
 
